@@ -1,0 +1,19 @@
+{
+  "name": "Quick Garden",
+  "short_name": "Garden",
+  "description": "Frictionless task capture — plant a seed, copy to Claude",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#fafaf8",
+  "theme_color": "#5a9930",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

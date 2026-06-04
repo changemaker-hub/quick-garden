@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#5a9930"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="Quick Garden"/>
+  <link rel="manifest" href="manifest.json"/>
+  <title>Quick Garden</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;background:#eef2eb;font-family:'DM Sans',sans-serif;color:#2d2d2d}
+
+    .app{max-width:480px;margin:0 auto;min-height:100%;background:#fafaf8;display:flex;flex-direction:column;position:relative}
+
+    /* Header */
+    .header{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid #eae6e0;background:#fafaf8;position:sticky;top:0;z-index:10}
+    .header h1{font-family:'Lora',serif;font-size:21px;font-weight:500;color:#2d2d2d}
+    .header p{font-size:12px;color:#aaa;margin-top:2px}
+
+    /* Capture */
+    .capture{padding:1.25rem;border-bottom:1px solid #eae6e0}
+
+    textarea{width:100%;padding:12px 14px;border:1px solid #ddd9d3;border-radius:12px;background:#fff;font-family:'DM Sans',sans-serif;font-size:16px;color:#2d2d2d;resize:none;height:82px;line-height:1.5;outline:none;transition:border-color .15s}
+    textarea:focus{border-color:#5a9930}
+    textarea::placeholder{color:#c0c0c0}
+
+    /* Mic */
+    .mic-row{display:flex;align-items:center;gap:10px;margin:10px 0}
+    .mic-btn{width:50px;height:50px;border-radius:50%;border:none;background:#5a9930;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;box-shadow:0 2px 8px rgba(90,153,48,.25)}
+    .mic-btn:hover{background:#4a8820}
+    .mic-btn.listening{background:#d94f4f;animation:pulse 1s ease-in-out infinite}
+    .mic-btn.disabled{background:#ccc;cursor:default;box-shadow:none}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(217,79,79,.4)}50%{box-shadow:0 0 0 10px rgba(217,79,79,0)}}
+    .mic-label{font-size:13px;color:#aaa;flex:1;line-height:1.4}
+    .mic-label.on{color:#d94f4f}
+
+    /* Cats */
+    .cats{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+    .cat-chip{padding:5px 14px;border-radius:20px;border:1px solid #ddd9d3;background:#fafaf8;font-size:12px;font-family:'DM Sans',sans-serif;color:#7a7a7a;cursor:pointer;transition:all .15s;user-select:none}
+    .cat-chip.on{background:#5a9930;border-color:#5a9930;color:#fff}
+
+    /* Parked */
+    .park-row{display:flex;align-items:center;gap:8px;padding:.65rem .85rem;background:#f2f5ef;border-radius:10px;border:1px solid #e4e9e0;margin:10px 0}
+    .park-row label{font-size:13px;color:#6a7a62;cursor:pointer;flex:1;line-height:1.4}
+    .park-row input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#5a9930;flex-shrink:0}
+    .date-row{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:0 2px}
+    .date-row.show{display:flex}
+    .date-row label{font-size:12px;color:#9a9a9a}
+    .date-row input[type=date]{padding:5px 8px;border:1px solid #ddd9d3;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;color:#2d2d2d;background:#fff;outline:none}
+
+    /* Add button */
+    .add-btn{width:100%;padding:14px;background:#5a9930;color:#fff;border:none;border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:background .15s;margin-top:4px;letter-spacing:.01em}
+    .add-btn:hover{background:#4a8820}
+    .add-btn:active{background:#3a7010;transform:scale(.99)}
+
+    /* Tasks */
+    .tasks-section{flex:1;padding:1rem 1.25rem 0;overflow-y:auto}
+    .tasks-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem}
+    .tasks-header h2{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#aaa}
+    .clear-btn{font-size:11px;color:#ccc;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;padding:2px 4px;transition:color .15s}
+    .clear-btn:hover{color:#d94f4f}
+
+    .empty-state{text-align:center;padding:2.5rem 1rem;color:#ccc;font-family:'Lora',serif;font-style:italic;font-size:14px;line-height:1.9}
+
+    .task-item{display:flex;align-items:flex-start;gap:8px;padding:.75rem 0;border-bottom:1px solid #f0ede8;animation:slideIn .2s ease}
+    .task-item:last-child{border-bottom:none}
+    @keyframes slideIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+
+    .task-body{flex:1;min-width:0}
+    .task-text{font-size:14px;color:#2d2d2d;line-height:1.45;word-break:break-word}
+    .task-meta{display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap}
+    .task-cat{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500}
+    .cat-work{background:#eeedf9;color:#7F77DD}
+    .cat-home{background:#e6f7f2;color:#1D9E75}
+    .cat-pet{background:#fff5e6;color:#c07810}
+    .cat-self{background:#fdeef4;color:#D4537E}
+    .cat-default{background:#f2f2f2;color:#888}
+    .task-parked{font-size:10px;color:#5a9930}
+    .task-ripe{font-size:10px;color:#c07810;font-weight:500}
+
+    .task-actions{display:flex;gap:2px;flex-shrink:0;margin-top:1px}
+    .task-btn{width:28px;height:28px;border:none;background:none;cursor:pointer;color:#ccc;font-size:13px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'DM Sans',sans-serif}
+    .task-btn:hover{background:#f0ede8;color:#5a9930}
+    .task-btn.del:hover{color:#d94f4f}
+
+    /* Footer */
+    .footer{padding:1rem 1.25rem 1.25rem;border-top:1px solid #eae6e0;background:#fafaf8}
+    .claude-btn{width:100%;padding:12px;border:1.5px solid #5a9930;border-radius:12px;background:transparent;color:#5a9930;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .15s}
+    .claude-btn:hover{background:#f2f5ef}
+    .claude-btn:disabled{opacity:.35;cursor:default}
+
+    /* Toast */
+    .toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%) translateY(12px);background:#2d2d2d;color:#fff;padding:9px 18px;border-radius:20px;font-size:13px;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:200}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <h1>Quick Garden 🌿</h1>
+    <p>capture without the friction</p>
+  </div>
+
+  <div class="capture">
+    <textarea id="task-input" placeholder="What's on your mind?"></textarea>
+
+    <div class="mic-row">
+      <button class="mic-btn" id="mic-btn" onclick="toggleMic()">🎙️</button>
+      <span class="mic-label" id="mic-label">tap to speak instead of type</span>
+    </div>
+
+    <div class="cats">
+      <button class="cat-chip" onclick="pickCat('work',this)">work</button>
+      <button class="cat-chip" onclick="pickCat('home',this)">home</button>
+      <button class="cat-chip" onclick="pickCat('pet',this)">alfie</button>
+      <button class="cat-chip" onclick="pickCat('self',this)">self</button>
+    </div>
+
+    <div class="park-row">
+      <input type="checkbox" id="park-chk" onchange="toggleParked(this)"/>
+      <label for="park-chk">out of my hands — waiting on someone else</label>
+    </div>
+    <div class="date-row" id="date-row">
+      <label for="ripe-date">check back on:</label>
+      <input type="date" id="ripe-date"/>
+      <span style="font-size:11px;color:#bbb">(optional)</span>
+    </div>
+
+    <button class="add-btn" onclick="addTask()">+ plant it</button>
+  </div>
+
+  <div class="tasks-section">
+    <div class="tasks-header">
+      <h2 id="task-count">nothing planted yet</h2>
+      <button class="clear-btn" onclick="clearAll()">clear all</button>
+    </div>
+    <div id="task-list">
+      <div class="empty-state">nothing here yet —<br>plant something above ☝️</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <button class="claude-btn" id="claude-btn" onclick="copyForClaude()" disabled>
+      📋 copy for Claude — paste into your garden chat
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let tasks=[], selCat=null, isParked=false, recognition=null, isListening=false, speechOK=false;
+
+// ── Storage ───────────────────────────────────────────
+function save(){try{localStorage.setItem('qg',JSON.stringify(tasks))}catch(e){}}
+function load(){try{const r=localStorage.getItem('qg');if(r)tasks=JSON.parse(r)}catch(e){tasks=[]}}
+
+// ── Voice ─────────────────────────────────────────────
+function initSpeech(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    document.getElementById('mic-label').textContent='voice input not supported in this browser';
+    document.getElementById('mic-btn').classList.add('disabled');
+    return;
+  }
+  recognition=new SR();
+  recognition.continuous=false;
+  recognition.interimResults=true;
+  recognition.lang='en-US';
+  recognition.onresult=e=>{
+    const t=Array.from(e.results).map(r=>r[0].transcript).join('');
+    document.getElementById('task-input').value=t;
+  };
+  recognition.onerror=e=>{isListening=false;updateMic();if(e.error!=='no-speech')toast('Mic error — try again')};
+  recognition.onend=()=>{isListening=false;updateMic()};
+  speechOK=true;
+}
+
+function toggleMic(){
+  if(!speechOK)return;
+  if(isListening){recognition.stop();isListening=false}
+  else{try{recognition.start();isListening=true}catch(e){isListening=false}}
+  updateMic();
+}
+
+function updateMic(){
+  const btn=document.getElementById('mic-btn'),lbl=document.getElementById('mic-label');
+  if(isListening){btn.classList.add('listening');btn.innerHTML='⏹️';lbl.textContent='listening... tap to stop';lbl.classList.add('on')}
+  else{btn.classList.remove('listening');btn.innerHTML='🎙️';lbl.textContent='tap to speak instead of type';lbl.classList.remove('on')}
+}
+
+// ── UI helpers ────────────────────────────────────────
+function pickCat(c,el){
+  selCat=(selCat===c)?null:c;
+  document.querySelectorAll('.cat-chip').forEach(b=>b.classList.remove('on'));
+  if(selCat)el.classList.add('on');
+}
+
+function toggleParked(el){
+  isParked=el.checked;
+  document.getElementById('date-row').classList.toggle('show',isParked);
+}
+
+// ── Add ───────────────────────────────────────────────
+function addTask(){
+  const inp=document.getElementById('task-input');
+  const text=inp.value.trim();
+  if(!text){inp.focus();return}
+  const ripenDate=isParked?(document.getElementById('ripe-date').value||null):null;
+  tasks.unshift({id:Date.now().toString(),text,cat:selCat||null,status:isParked?'parked':'seed',ripenDate,added:Date.now()});
+  save();
+  inp.value='';
+  selCat=null;isParked=false;
+  document.getElementById('park-chk').checked=false;
+  document.getElementById('date-row').classList.remove('show');
+  document.getElementById('ripe-date').value='';
+  document.querySelectorAll('.cat-chip').forEach(b=>b.classList.remove('on'));
+  render();toast('planted 🌱');
+}
+
+// ── Delete / park ─────────────────────────────────────
+function del(id){tasks=tasks.filter(t=>t.id!==id);save();render()}
+function togglePark(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  t.status=t.status==='parked'?'seed':'parked';
+  if(t.status==='seed')t.ripenDate=null;
+  save();render();
+}
+function clearAll(){
+  if(!tasks.length)return;
+  if(confirm('Clear everything? This can\'t be undone.')){tasks=[];save();render()}
+}
+
+// ── Render ────────────────────────────────────────────
+const catCls={work:'cat-work',home:'cat-home',pet:'cat-pet',self:'cat-self'};
+function fmtDate(d){if(!d)return'';return new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+function isRipe(t){return t.ripenDate&&new Date(t.ripenDate+'T00:00:00')<=new Date()}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+
+function render(){
+  const list=document.getElementById('task-list');
+  const cnt=document.getElementById('task-count');
+  const btn=document.getElementById('claude-btn');
+  cnt.textContent=tasks.length===0?'nothing planted yet':`${tasks.length} seed${tasks.length!==1?'s':''} waiting`;
+  btn.disabled=!tasks.length;
+  if(!tasks.length){list.innerHTML='<div class="empty-state">nothing here yet —<br>plant something above ☝️</div>';return}
+  list.innerHTML=tasks.map(t=>{
+    const cc=`<span class="task-cat ${catCls[t.cat]||'cat-default'}">${esc(t.cat||'')}</span>`;
+    const catTag=t.cat?cc:'';
+    let statusTag='';
+    if(t.status==='parked'){
+      statusTag=isRipe(t)?`<span class="task-ripe">ready to check on ✦</span>`:t.ripenDate?`<span class="task-parked">🌿 check ${fmtDate(t.ripenDate)}</span>`:`<span class="task-parked">🌿 parked</span>`;
+    }
+    const meta=(catTag||statusTag)?`<div class="task-meta">${catTag}${statusTag}</div>`:'';
+    const parkIcon=t.status==='parked'?'↩':'🌿';
+    const parkTitle=t.status==='parked'?'unpark':'park — waiting on someone';
+    return`<div class="task-item"><div class="task-body"><div class="task-text">${esc(t.text)}</div>${meta}</div><div class="task-actions"><button class="task-btn" onclick="togglePark('${t.id}')" title="${parkTitle}">${parkIcon}</button><button class="task-btn del" onclick="del('${t.id}')" title="remove">✕</button></div></div>`;
+  }).join('');
+}
+
+// ── Copy for Claude ────────────────────────────────────
+function copyForClaude(){
+  if(!tasks.length)return;
+  const lines=tasks.map(t=>{
+    let line=`- ${t.text}`;
+    if(t.cat)line+=` (${t.cat})`;
+    if(t.status==='parked')line+=t.ripenDate?` [parked — check back ${fmtDate(t.ripenDate)}]`:' [parked — waiting on someone]';
+    return line;
+  }).join('\n');
+  const msg=`Hi! I have new items to add to my garden:\n\n${lines}\n\nCan you add these to my task list and sort them into seeds and parked items?`;
+  navigator.clipboard.writeText(msg).then(()=>toast('Copied — paste into Claude 🌿')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=msg;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    toast('Copied — paste into Claude 🌿');
+  });
+}
+
+// ── Toast ─────────────────────────────────────────────
+let tTimer=null;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');if(tTimer)clearTimeout(tTimer);tTimer=setTimeout(()=>el.classList.remove('show'),2500)}
+
+// ── Enter shortcut (Ctrl/Cmd+Enter) ──────────────────
+document.getElementById('task-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))addTask()});
+
+// ── Service worker ────────────────────────────────────
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+// ── Init ──────────────────────────────────────────────
+load();render();initSpeech();
+</script>
+</body>
+</html>
