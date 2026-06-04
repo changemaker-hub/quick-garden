@@ -557,6 +557,17 @@ function plantSeed(){
   toast('planted 🌱');goGarden();
 }
 
+function quickBloom(id,e){
+  e.stopPropagation();
+  const t=tasks.find(x=>x.id===id);
+  if(!t)return;
+  t.status='bloomed';t.completedAt=Date.now();t.ripenDate=null;
+  save();renderAll();
+  const msg=MSGS[Math.floor(Math.random()*MSGS.length)];
+  const ma=document.getElementById('bloom-msg-area');
+  ma.innerHTML=`<p class="bloom-msg">${msg}</p>`;
+  setTimeout(()=>{ma.innerHTML=''},5000);
+}
 function startPark(id,e){e.stopPropagation();parkingId=(parkingId===id)?null:id;renderSeedList()}
 function confirmPark(id,e){
   e.stopPropagation();const dv=document.getElementById('pk-'+id);
@@ -696,7 +707,7 @@ function renderSeedList(){
     const inPark=parkingId===t.id;
     const cls=t.urgent?' urgent':'';
     const dot=t.urgent?'🔴 ':'';
-    return`<div style="display:flex;flex-direction:column;gap:3px"><div class="pill${cls}"><span class="pill-t" title="${esc(t.text)}">${dot}${esc(t.text.length>26?t.text.slice(0,26)+'…':t.text)}</span><button class="pi" onclick="startPark('${t.id}',event)" title="park — waiting on someone">🌿</button><button class="pi" onclick="delTask('${t.id}',event)" title="remove">✕</button></div>${inPark?`<div class="park-inline"><label>check back:</label><input type="date" id="pk-${t.id}"/><button onclick="confirmPark('${t.id}',event)" style="padding:3px 9px;font-size:11px" class="btn-green">park 🌿</button><button onclick="startPark('${t.id}',event)" style="padding:3px 5px;font-size:11px;border:none;background:none;color:#bbb;cursor:pointer">×</button></div>`:''}</div>`;
+    return`<div style="display:flex;flex-direction:column;gap:3px"><div class="pill${cls}"><span class="pill-t" title="${esc(t.text)}">${dot}${esc(t.text.length>26?t.text.slice(0,26)+'…':t.text)}</span><button class="pi pi-done" onclick="quickBloom('${t.id}',event)" title="mark done 🌸" style="color:#5a9930;font-size:13px">✓</button><button class="pi" onclick="startPark('${t.id}',event)" title="park — waiting on someone">🌿</button><button class="pi" onclick="delTask('${t.id}',event)" title="remove">✕</button></div>${inPark?`<div class="park-inline"><label>check back:</label><input type="date" id="pk-${t.id}"/><button onclick="confirmPark('${t.id}',event)" style="padding:3px 9px;font-size:11px" class="btn-green">park 🌿</button><button onclick="startPark('${t.id}',event)" style="padding:3px 5px;font-size:11px;border:none;background:none;color:#bbb;cursor:pointer">×</button></div>`:''}</div>`;
   }).join('')}</div></div>`;
 }
 
