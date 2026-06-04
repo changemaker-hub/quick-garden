@@ -1,7 +1,7 @@
 {
-  "name": "Quick Garden",
+  "name": "My Garden",
   "short_name": "Garden",
-  "description": "Frictionless task capture — plant a seed, copy to Claude",
+  "description": "Your focus garden — bloom flowers by getting things done",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
