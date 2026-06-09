@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#5a9930"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="My Garden"/>
+<link rel="manifest" href="manifest.json"/>
+<title>My Garden</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#eef2eb;font-family:'DM Sans',sans-serif;color:#2d2d2d;overscroll-behavior:none}
+.app{max-width:500px;margin:0 auto;height:100vh;height:100dvh;background:#fafaf8;display:flex;flex-direction:column;position:relative;overflow:hidden}
+
+/* ── Header ─────────────────────────────────────────── */
+.hdr{padding:1rem 1.1rem .75rem;border-bottom:1px solid #eae6e0;background:#fafaf8;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:20}
+.hdr-left h1{font-family:'Lora',serif;font-size:19px;font-weight:500;color:#2d2d2d}
+.hdr-left p{font-size:11px;color:#bbb;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.online-dot{width:7px;height:7px;border-radius:50%;background:#5a9930;transition:background .3s;flex-shrink:0}
+.online-dot.off{background:#ccc}
+.icon-btn{width:34px;height:34px;border:none;background:none;cursor:pointer;color:#aaa;font-size:18px;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.icon-btn:hover{background:#f0ede8;color:#5a9930}
+
+/* ── Scrollable body ─────────────────────────────────── */
+.body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* ── Panels ─────────────────────────────────────────── */
+.panel{display:none;padding:.85rem 1.1rem 1rem;min-height:100%}
+.panel.active{display:block}
+
+/* ── Garden ─────────────────────────────────────────── */
+.gsvg-wrap{width:100%;border-radius:14px;border:1px solid #e4e9e0;overflow:hidden;margin-bottom:.85rem}
+.stats{display:flex;gap:7px;margin-bottom:.85rem;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:4px 9px;border-radius:20px;background:#f0ede8;color:#7a7a7a;border:1px solid #e4e0db}
+.ripe-wrap{border-left:3px solid #9FE1CB;padding:.75rem .9rem;border-radius:0 10px 10px 0;background:#f2f5ef;margin-bottom:.85rem}
+.ripe-title{font-family:'Lora',serif;font-style:italic;font-size:13px;color:#6a8a6a;margin-bottom:.5rem}
+.ripe-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:.5px solid #dde8dd;flex-wrap:wrap}
+.ripe-row:last-child{border-bottom:none}
+.ripe-text{flex:1;min-width:110px;font-size:13px;color:#2d2d2d}
+.bloom-msg{font-family:'Lora',serif;font-style:italic;font-size:14px;color:#7a7a7a;text-align:center;margin-bottom:.75rem;animation:fadeUp .4s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Action buttons ──────────────────────────────────── */
+.btn-row{display:flex;gap:8px;margin-bottom:.85rem}
+button{font-family:'DM Sans',sans-serif;cursor:pointer;border:1px solid #ddd9d3;border-radius:10px;background:#fafaf8;color:#2d2d2d;transition:all .15s;font-size:14px;padding:10px 14px}
+button:hover{background:#f0ede8}
+button:active{transform:scale(.98)}
+.btn-green{background:#5a9930;border-color:#5a9930;color:#fff}
+.btn-green:hover{background:#4a8820}
+.btn-ghost{border-color:transparent;color:#aaa;font-size:13px}
+.btn-ghost:hover{color:#7a7a7a;background:#f0ede8}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:7px}
+
+/* ── Seed / parked pills ─────────────────────────────── */
+.pill-section{margin-bottom:.75rem}
+.sec-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#bbb;margin-bottom:7px}
+.pills-wrap{display:flex;flex-wrap:wrap;gap:6px}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:5px 9px;border-radius:20px;background:#f0ede8;color:#5a5a5a;border:1px solid #e4e0db;max-width:280px}
+.pill-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;max-width:170px}
+.pill.parked{background:#eaf4f8;border-color:#c8dfe8;color:#4a7a8a}
+.pill.urgent{background:#fef0ee;border-color:#f0c8c0;color:#c05040}
+.pi{color:#ccc;font-size:11px;cursor:pointer;padding:1px 3px;border-radius:4px;opacity:.7;border:none;background:none;font-family:'DM Sans',sans-serif;transition:opacity .15s;flex-shrink:0}
+.pi:hover{opacity:1;background:#fff}
+.park-inline{display:flex;align-items:center;gap:6px;padding:4px 9px;border-radius:8px;background:#fff;border:1px solid #e4e0db;flex-wrap:wrap;margin-top:3px}
+.park-inline label{font-size:11px;color:#aaa}
+.park-inline input[type=date]{font-size:11px;padding:3px 6px;border-radius:6px;border:1px solid #ddd9d3;background:#fafaf8;color:#2d2d2d;font-family:'DM Sans',sans-serif}
+
+/* ── Bottom bar ──────────────────────────────────────── */
+.btm-bar{padding:.75rem 1.1rem;border-top:1px solid #eae6e0;background:#fafaf8;display:flex;gap:8px;flex-shrink:0}
+.btm-btn{flex:1;padding:11px;border:1px solid #ddd9d3;border-radius:10px;background:#fafaf8;color:#5a5a5a;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;text-align:center}
+.btm-btn:hover{background:#f0ede8}
+.btm-btn.green{border-color:#5a9930;color:#5a9930}
+.btm-btn.green:hover{background:#f2f5ef}
+
+/* ── Card ────────────────────────────────────────────── */
+.card{background:#fff;border:1px solid #eae6e0;border-radius:14px;padding:1.25rem 1.4rem;margin-bottom:1rem}
+.card-title{font-family:'Lora',serif;font-style:italic;font-size:17px;line-height:1.6;color:#2d2d2d;margin-bottom:1.1rem}
+.inv-text{font-family:'Lora',serif;font-size:18px;line-height:1.65;color:#2d2d2d;margin-bottom:1.25rem;font-style:italic}
+.doing-text{font-family:'Lora',serif;font-size:20px;font-weight:500;line-height:1.4;margin-bottom:1.4rem;color:#2d2d2d}
+.mode-note{font-size:11px;color:#bbb;margin-bottom:.85rem}
+
+/* ── Energy buttons ──────────────────────────────────── */
+.e-row{display:flex;gap:8px;margin-bottom:.5rem}
+.e-btn{flex:1;padding:11px 6px;text-align:center;font-size:13px;color:#7a7a7a;border-radius:10px;border:1px solid #ddd9d3;background:#fafaf8;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.e-btn:hover,.e-btn.on{background:#f0ede8;color:#2d2d2d;border-color:#c0bab4}
+
+/* ── Form elements ───────────────────────────────────── */
+textarea,input[type=text],input[type=password]{width:100%;padding:10px 12px;border:1px solid #ddd9d3;border-radius:10px;background:#fff;font-family:'DM Sans',sans-serif;font-size:15px;color:#2d2d2d;outline:none;transition:border-color .15s}
+textarea{resize:none;height:76px;line-height:1.5}
+textarea:focus,input:focus{border-color:#5a9930}
+textarea::placeholder,input::placeholder{color:#c0c0c0}
+.cat-row{display:flex;gap:6px;flex-wrap:wrap;margin:.75rem 0}
+.cat-btn{padding:5px 13px;border-radius:20px;border:1px solid #ddd9d3;background:#fafaf8;font-size:12px;font-family:'DM Sans',sans-serif;color:#7a7a7a;cursor:pointer;transition:all .15s}
+.cat-btn.on{background:#5a9930;border-color:#5a9930;color:#fff}
+.park-toggle{display:flex;align-items:center;gap:8px;padding:.65rem .85rem;background:#f2f5ef;border-radius:10px;border:1px solid #e4e9e0;margin:.5rem 0}
+.park-toggle label{font-size:13px;color:#6a7a62;cursor:pointer;flex:1;line-height:1.4}
+.park-toggle input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#5a9930;flex-shrink:0}
+.date-row{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:.5rem}
+.date-row.show{display:flex}
+.date-row label{font-size:12px;color:#aaa}
+.date-row input[type=date]{padding:5px 8px;border:1px solid #ddd9d3;border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;color:#2d2d2d;background:#fff;outline:none}
+.input-row{display:flex;gap:8px;margin-bottom:.75rem}
+.input-row input{flex:1}
+
+/* ── Settings ────────────────────────────────────────── */
+.settings-row{margin-bottom:1.25rem}
+.settings-label{font-size:12px;color:#aaa;margin-bottom:5px;display:block}
+.settings-note{font-size:11px;color:#bbb;margin-top:5px;line-height:1.5}
+.pwd-wrap{position:relative}
+.pwd-wrap input{padding-right:40px}
+.show-key{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:#bbb;font-size:13px;padding:2px 4px}
+.danger-zone{border-top:1px solid #f0ede8;padding-top:1rem;margin-top:1rem}
+
+/* ── Mic ─────────────────────────────────────────────── */
+.mic-row{display:flex;align-items:center;gap:10px;margin-bottom:.75rem}
+.mic-btn{width:48px;height:48px;border-radius:50%;border:none;background:#5a9930;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;box-shadow:0 2px 8px rgba(90,153,48,.2)}
+.mic-btn:hover{background:#4a8820}
+.mic-btn.listening{background:#d94f4f;animation:pulse 1s ease-in-out infinite}
+.mic-btn.disabled{background:#ccc;cursor:default;box-shadow:none}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(217,79,79,.35)}50%{box-shadow:0 0 0 9px rgba(217,79,79,0)}}
+.mic-lbl{font-size:12px;color:#aaa;flex:1}
+.mic-lbl.on{color:#d94f4f}
+
+/* ── Back btn ────────────────────────────────────────── */
+.back-btn{font-size:13px;padding:6px 0;color:#aaa;border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:color .15s;margin-top:.25rem}
+.back-btn:hover{color:#2d2d2d}
+
+/* ── Loading dots ────────────────────────────────────── */
+.dots span{animation:dot 1.4s infinite;display:inline-block;font-size:7px}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* ── Flower animations ───────────────────────────────── */
+@keyframes flIn{0%{opacity:0;transform:scale(0) translateY(8px)}65%{transform:scale(1.12) translateY(-3px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes petalFade{from{opacity:0}to{opacity:1}}
+@keyframes sway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1deg)}}
+.fl-e{animation:flIn .65s cubic-bezier(.34,1.56,.64,1) both}
+.fl-s{animation:sway 4s ease-in-out infinite}
+
+/* ── Toast ───────────────────────────────────────────── */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:#2d2d2d;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;transition:all .25s;pointer-events:none;white-space:nowrap;z-index:200;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="hdr">
+  <div class="hdr-left">
+    <h1>My Garden 🌿</h1>
+    <p id="hdr-sub">loading...</p>
+  </div>
+  <div class="hdr-right">
+    <div class="online-dot" id="online-dot" title="online"></div>
+    <button class="icon-btn" onclick="goSettings()" title="settings">⚙️</button>
+  </div>
+</div>
+
+<div class="body">
+
+<!-- ── GARDEN ──────────────────────────────────────── -->
+<div class="panel active" id="p-garden">
+  <div class="gsvg-wrap">
+    <svg id="gsvg" viewBox="0 0 500 200" width="100%" xmlns="http://www.w3.org/2000/svg" style="display:block">
+      <rect width="500" height="158" fill="#dff0fc"/>
+      <circle cx="462" cy="32" r="22" fill="#fff8d6" opacity=".8"/>
+      <circle cx="462" cy="32" r="16" fill="#fde87a" opacity=".65"/>
+      <g opacity=".7" fill="#fff"><ellipse cx="100" cy="38" rx="28" ry="14"/><ellipse cx="80" cy="43" rx="16" ry="11"/><ellipse cx="122" cy="43" rx="18" ry="11"/></g>
+      <g opacity=".55" fill="#fff"><ellipse cx="340" cy="46" rx="22" ry="11"/><ellipse cx="323" cy="50" rx="13" ry="9"/><ellipse cx="358" cy="50" rx="14" ry="9"/></g>
+      <rect y="158" width="500" height="42" fill="#7ab840"/>
+      <rect y="158" width="500" height="7" fill="#5a9930"/>
+      <g fill="#4a8820" opacity=".4"><path d="M10,158 Q12,150 14,158 M36,158 Q39,147 42,158 M70,158 Q72,153 74,158 M130,158 Q133,148 136,158 M200,158 Q202,153 204,158 M280,158 Q283,148 286,158 M360,158 Q362,153 364,158 M430,158 Q433,148 436,158 M480,158 Q482,153 484,158"/></g>
+      <g id="fl-layer"></g>
+      <g id="empty-g">
+        <text x="250" y="88" text-anchor="middle" fill="#b0d8ef" font-size="13" font-family="Georgia,serif" font-style="italic">your garden is waiting to grow</text>
+        <text x="250" y="106" text-anchor="middle" fill="#b8e0a8" font-size="11" font-family="Georgia,serif">complete something to bloom your first flower ✦</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="stats">
+    <span class="chip" id="s-seeds">🌱 0 seeds</span>
+    <span class="chip" id="s-parked">🌿 0 parked</span>
+    <span class="chip" id="s-bloomed">🌸 0 bloomed</span>
+  </div>
+
+  <div id="ripe-area" style="display:none"></div>
+  <div id="bloom-msg-area"></div>
+
+  <div class="btn-row">
+    <button class="btn-green" onclick="goFocus()" style="flex:2;font-size:14px">what could I do? ↗</button>
+    <button onclick="goAdd()" style="flex:1;font-size:13px">+ seed</button>
+  </div>
+
+  <div id="parked-list-area"></div>
+  <div id="seed-list-area"></div>
+</div>
+
+<!-- ── ENERGY ──────────────────────────────────────── -->
+<div class="panel" id="p-energy">
+  <div class="card">
+    <p class="card-title">How's your energy right now?</p>
+    <div class="e-row">
+      <button class="e-btn" onclick="pickE('low',this)">🪫 low</button>
+      <button class="e-btn" onclick="pickE('medium',this)">⚡ some</button>
+      <button class="e-btn" onclick="pickE('high',this)">🔥 good</button>
+    </div>
+  </div>
+  <button class="back-btn" onclick="goGarden()">← back</button>
+</div>
+
+<!-- ── SUGGESTION ──────────────────────────────────── -->
+<div class="panel" id="p-suggest">
+  <div class="card">
+    <div id="sug-loading" style="display:none;color:#aaa;font-size:13px;margin-bottom:1rem"><span class="dots"><span>●</span><span>●</span><span>●</span></span> finding something for you...</div>
+    <p class="inv-text" id="inv-text"></p>
+    <div class="mode-note" id="mode-note"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap" id="sug-actions">
+      <button class="btn-green" onclick="yesTask()" style="flex:2">yeah, let's try ↗</button>
+      <button onclick="skipTask()" style="flex:1;color:#7a7a7a">another one</button>
+      <button class="btn-ghost" onclick="notToday()">not today</button>
+    </div>
+  </div>
+  <button class="back-btn" onclick="goGarden()">← back</button>
+</div>
+
+<!-- ── DOING ───────────────────────────────────────── -->
+<div class="panel" id="p-doing">
+  <div class="card">
+    <p style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#bbb;margin-bottom:8px">right now</p>
+    <p class="doing-text" id="do-text"></p>
+    <div style="display:flex;gap:8px">
+      <button class="btn-green" onclick="completeTask()" style="flex:2;font-size:15px">done! 🌸</button>
+      <button class="btn-ghost" onclick="notToday()" style="flex:1">not today</button>
+    </div>
+  </div>
+  <button class="back-btn" onclick="goGarden()">← back</button>
+</div>
+
+<!-- ── ADD SEED ────────────────────────────────────── -->
+<div class="panel" id="p-add">
+  <div class="card">
+    <p class="card-title">What's on your mind? Plant it — no pressure to act yet.</p>
+    <div class="mic-row">
+      <button class="mic-btn" id="mic-btn" onclick="toggleMic()">🎙️</button>
+      <span class="mic-lbl" id="mic-lbl">tap to speak</span>
+    </div>
+    <textarea id="seed-inp" placeholder="or type it here..." onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey))plantSeed()"></textarea>
+    <div class="cat-row">
+      <button class="cat-btn" onclick="pickCat('work',this)">work</button>
+      <button class="cat-btn" onclick="pickCat('home',this)">home</button>
+      <button class="cat-btn" onclick="pickCat('pet',this)">alfie</button>
+      <button class="cat-btn" onclick="pickCat('self',this)">self</button>
+    </div>
+    <div class="park-toggle">
+      <input type="checkbox" id="park-chk" onchange="toggleParkAdd(this)"/>
+      <label for="park-chk">out of my hands — waiting on someone else</label>
+    </div>
+    <div class="date-row" id="add-date-row">
+      <label>check back on:</label>
+      <input type="date" id="add-date"/>
+      <span style="font-size:11px;color:#bbb">(optional)</span>
+    </div>
+    <button class="btn-green" onclick="plantSeed()" style="width:100%;margin-top:.5rem">+ plant it</button>
+  </div>
+  <button class="back-btn" onclick="goGarden()">← back</button>
+</div>
+
+<!-- ── SETTINGS ────────────────────────────────────── -->
+<div class="panel" id="p-settings">
+  <div class="card">
+    <p style="font-family:'Lora',serif;font-size:17px;font-weight:500;margin-bottom:1.25rem">Settings</p>
+
+    <div class="settings-row">
+      <label class="settings-label">Claude API Key <span style="color:#5a9930;font-size:10px">(optional — for AI suggestions)</span></label>
+      <div class="pwd-wrap">
+        <input type="password" id="api-key-inp" placeholder="sk-ant-..."/>
+        <button class="show-key" onclick="toggleKeyVis(this)">👁</button>
+      </div>
+      <p class="settings-note">
+        Stored only on this device. Powers the "what could I do?" suggestions when online.<br/>
+        Get a key at <strong>console.anthropic.com</strong> → API Keys.<br/>
+        Without a key, smart suggestions still work offline.
+      </p>
+      <button onclick="saveApiKey()" style="margin-top:.65rem;padding:8px 16px;font-size:13px" class="btn-green">save key</button>
+      <button onclick="clearApiKey()" style="margin-top:.5rem;padding:8px 16px;font-size:13px;color:#aaa">clear key</button>
+    </div>
+
+    <div class="settings-row">
+      <label class="settings-label">Connection</label>
+      <p id="settings-status" style="font-size:13px;color:#7a7a7a">checking...</p>
+    </div>
+
+    <div class="danger-zone">
+      <label class="settings-label" style="color:#c05040">Danger zone</label>
+      <button onclick="resetGarden()" style="padding:8px 16px;font-size:13px;color:#c05040;border-color:#f0c8c0">reset entire garden</button>
+      <p class="settings-note" style="margin-top:4px">Clears all seeds, parked items, and bloomed flowers. Cannot be undone.</p>
+    </div>
+  </div>
+  <button class="back-btn" onclick="goGarden()">← back to garden</button>
+</div>
+
+</div><!-- /body -->
+
+<div class="btm-bar" id="btm-bar">
+  <button class="btm-btn green" onclick="copySeeds()">📋 sync to Claude</button>
+  <button class="btm-btn" onclick="copyEOD()">🌸 end of day →</button>
+</div>
+
+</div><!-- /app -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────
+let tasks=[], cur=null, energy='medium', skipIds=[], selCat=null, parkingId=null;
+let isParking=false, recognition=null, isListening=false, speechOK=false;
+
+// ── COLORS / TYPES ─────────────────────────────────────────────────────
+const COLORS={work:['#AFA9EC','#7F77DD','#D4537E','#ED93B1'],home:['#5DCAA5','#1D9E75','#9FE1CB'],pet:['#FAC775','#EF9F27','#F0997B'],self:['#ED93B1','#AFA9EC','#5DCAA5'],default:['#AFA9EC','#5DCAA5','#ED93B1','#FAC775','#F0997B']};
+const FTYPES=['round','daisy','tulip','star'];
+const MSGS=['Look at you. One more flower in the garden.','That one\'s done. It\'s not coming back.','Something small just got a little less heavy.','The garden remembers everything you finish.','One thing fewer in your head, one more in the ground.','You showed up. That counts.'];
+
+// ── STORAGE ────────────────────────────────────────────────────────────
+const SK='garden-v1';
+function save(){try{localStorage.setItem(SK,JSON.stringify(tasks))}catch(e){}}
+function loadTasks(){try{const r=localStorage.getItem(SK);if(r)tasks=JSON.parse(r);else tasks=defaultTasks()}catch(e){tasks=defaultTasks()}}
+function getApiKey(){return localStorage.getItem('garden-apikey')||''}
+function setApiKey(k){if(k)localStorage.setItem('garden-apikey',k);else localStorage.removeItem('garden-apikey')}
+
+// ── DEFAULT TASKS ──────────────────────────────────────────────────────
+function rd(d){const dt=new Date();dt.setDate(dt.getDate()+d);return dt.toISOString().split('T')[0]}
+function defaultTasks(){
+  const defs=[
+    {text:'Finish WF presentation',cat:'work',urgent:true,status:'parked',ripenDate:rd(2)},
+    {text:'Find the AI expo slides (check email/Slack)',cat:'work',urgent:true},
+    {text:'Review the analysis someone sent you',cat:'work',urgent:true},
+    {text:'Prepare for BD meeting',cat:'work',urgent:true},
+    {text:'Look over Destiny\'s results',cat:'work',urgent:false},
+    {text:'Review updates from Shannon and Stephanie',cat:'work',urgent:false},
+    {text:'Process monthly power query',cat:'work',urgent:true},
+    {text:'Pull monthly data',cat:'work',urgent:true},
+    {text:'Weekly data pull — cross-reference counts between systems',cat:'work',urgent:true},
+    {text:'Monthly email data → QA → update Excel → generate PowerPoint',cat:'work',urgent:true},
+    {text:'Draft AI expo presentation PPT',cat:'work',urgent:false},
+    {text:'Sign IEP for Rory',cat:'self',urgent:true},
+    {text:'Email leadership about gifts for Pastor Chelsea',cat:'self',urgent:false},
+    {text:'Send email on confirmation gift',cat:'self',urgent:false},
+    {text:'Schedule vet appointment for Alfie',cat:'pet',urgent:false},
+    {text:'Cut Alfie\'s hair (strong clippers — very knotted)',cat:'pet',urgent:false},
+    {text:'Bathe Alfie',cat:'pet',urgent:false},
+    {text:'Get clothes off bedroom floor — start with garbage bags',cat:'home',urgent:false},
+    {text:'Change bedding',cat:'home',urgent:false},
+    {text:'Clean the 3 tubs',cat:'home',urgent:false},
+    {text:'Refine TF-IDF process and higher-level analysis',cat:'work',urgent:false},
+    {text:'Learn to leverage TSX files better',cat:'work',urgent:false},
+    {text:'Understand the AI Python workspace',cat:'work',urgent:false},
+    {text:'Explore automation for the weekly data pull',cat:'work',urgent:false}
+  ];
+  return defs.map((s,i)=>{
+    const c=COLORS[s.cat]||COLORS.default;
+    return{id:'t'+(Date.now()+i),text:s.text,cat:s.cat,urgent:s.urgent||false,status:s.status||'seed',color:c[i%c.length],ftype:FTYPES[i%FTYPES.length],planted:Date.now()-i*400,ripenDate:s.ripenDate||null};
+  });
+}
+
+// ── ONLINE ─────────────────────────────────────────────────────────────
+let isOnline=navigator.onLine;
+function updateOnline(){
+  isOnline=navigator.onLine;
+  const dot=document.getElementById('online-dot');
+  dot.classList.toggle('off',!isOnline);
+  dot.title=isOnline?'online':'offline';
+  const ss=document.getElementById('settings-status');
+  if(ss)ss.textContent=isOnline?'Online — AI suggestions available':'Offline — smart suggestions only';
+}
+window.addEventListener('online',updateOnline);
+window.addEventListener('offline',updateOnline);
+
+// ── SPEECH ─────────────────────────────────────────────────────────────
+function initSpeech(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const btn=document.getElementById('mic-btn'),lbl=document.getElementById('mic-lbl');
+  if(!SR){btn.classList.add('disabled');lbl.textContent='voice not supported in this browser';return}
+  recognition=new SR();recognition.continuous=false;recognition.interimResults=true;recognition.lang='en-US';
+  recognition.onresult=e=>{const t=Array.from(e.results).map(r=>r[0].transcript).join('');document.getElementById('seed-inp').value=t};
+  recognition.onerror=e=>{isListening=false;updateMic();if(e.error!=='no-speech')toast('Mic error — try again')};
+  recognition.onend=()=>{isListening=false;updateMic()};
+  speechOK=true;
+}
+function toggleMic(){
+  if(!speechOK)return;
+  if(isListening){recognition.stop();isListening=false}
+  else{try{recognition.start();isListening=true}catch(e){isListening=false}}
+  updateMic();
+}
+function updateMic(){
+  const btn=document.getElementById('mic-btn'),lbl=document.getElementById('mic-lbl');
+  if(isListening){btn.classList.add('listening');btn.innerHTML='⏹️';lbl.textContent='listening... tap to stop';lbl.classList.add('on')}
+  else{btn.classList.remove('listening');btn.innerHTML='🎙️';lbl.textContent='tap to speak';lbl.classList.remove('on')}
+}
+
+// ── PANELS ─────────────────────────────────────────────────────────────
+function show(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  document.querySelector('.body').scrollTop=0;
+  const bar=document.getElementById('btm-bar');
+  bar.style.display=id==='garden'?'flex':'none';
+}
+function goGarden(){show('garden');renderAll()}
+function goAdd(){
+  show('add');
+  document.getElementById('park-chk').checked=false;
+  document.getElementById('add-date-row').classList.remove('show');
+  isParking=false;
+  setTimeout(()=>document.getElementById('seed-inp').focus(),80);
+}
+function goFocus(){
+  if(!tasks.filter(t=>t.status==='seed').length){goAdd();return}
+  show('energy');
+}
+function goSettings(){
+  show('settings');
+  const k=getApiKey();
+  document.getElementById('api-key-inp').value=k?'••••••••••••':'';
+  updateOnline();
+}
+
+// ── ENERGY ─────────────────────────────────────────────────────────────
+function pickE(lvl,el){
+  energy=lvl;
+  document.querySelectorAll('.e-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  setTimeout(getSuggestion,260);
+}
+
+// ── SUGGESTION ENGINE ──────────────────────────────────────────────────
+// Smart heuristic
+function pickByEnergy(avail,nrg){
+  const scored=avail.map(t=>{
+    let s=0;
+    if(t.urgent)s+=nrg==='high'?4:2;
+    if(nrg==='low'){if(t.text.length<35)s+=3;if(t.cat!=='work')s+=2}
+    else if(nrg==='medium'){s+=t.urgent?2:1}
+    else{if(t.cat==='work')s+=3}
+    s+=Math.min(((Date.now()-(t.planted||Date.now()))/(3600000)),2);
+    s+=Math.random()*1.5;
+    return{t,s};
+  });
+  return scored.sort((a,b)=>b.s-a.s)[0].t;
+}
+
+const INV={
+  low:{pre:["when you're ready, maybe just quietly","one gentle thing that might feel nice —","something small and doable:"],suf:["sound okay?","feel doable?","what do you think?"]},
+  medium:{pre:["feel like taking a crack at","one thing that could feel good to finish:","how about giving this a go —"],suf:["sound doable?","feel like giving it a shot?","up for it?"]},
+  high:{pre:["you've got some energy — how about","one thing worth diving into:","feel like tackling"],suf:["sound good?","feel like going for it?","up for it?"]}
+};
+function smartInvitation(task,nrg){
+  const set=INV[nrg]||INV.medium;
+  const pre=set.pre[Math.floor(Math.random()*set.pre.length)];
+  const suf=set.suf[Math.floor(Math.random()*set.suf.length)];
+  return`${pre} "${task.text.toLowerCase()}"? ${suf}`;
+}
+
+// Claude API suggestion
+async function claudeInvitation(task,avail,nrg,apiKey){
+  const list=avail.map(t=>`- [${t.id}] ${t.text} (${t.cat}${t.urgent?', urgent':''})`).join('\n');
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({
+      model:'claude-haiku-4-5-20251001',max_tokens:200,
+      system:`You are a warm, gentle focus companion. The user has ODD and decision paralysis. Pick ONE task from the list and offer it as a soft casual invitation. NEVER say "you should", "you need to", "you must". Use "might feel good to...", "feel like trying...", "could be nice to...". 1-2 warm casual sentences. End with "sound doable?" or "feel like giving it a shot?" or "up for it?". Energy: low=easiest/smallest. medium=satisfying endpoint. high=meaningful work. Respond ONLY valid JSON no markdown: {"taskId":"id","invitation":"message"}`,
+      messages:[{role:'user',content:`Energy: ${nrg}\n\nTasks:\n${list}`}]
+    })
+  });
+  const data=await res.json();
+  const raw=data.content.filter(c=>c.type==='text').map(c=>c.text).join('');
+  const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
+  const t=avail.find(x=>x.id===parsed.taskId)||task;
+  return{task:t,invitation:parsed.invitation,powered:'claude'};
+}
+
+async function getSuggestion(){
+  show('suggest');
+  const inv=document.getElementById('inv-text'),lr=document.getElementById('sug-loading'),sa=document.getElementById('sug-actions'),mn=document.getElementById('mode-note');
+  inv.textContent='';mn.textContent='';lr.style.display='block';sa.style.display='none';
+
+  const avail=tasks.filter(t=>t.status==='seed'&&!skipIds.includes(t.id));
+  if(!avail.length){
+    lr.style.display='none';
+    inv.textContent='You\'ve seen everything for now — that\'s perfectly okay. Come back whenever.';
+    sa.style.display='flex';return;
+  }
+
+  const apiKey=getApiKey();
+  let result=null;
+
+  if(isOnline&&apiKey){
+    try{
+      result=await claudeInvitation(pickByEnergy(avail,energy),avail,energy,apiKey);
+    }catch(e){result=null}
+  }
+
+  if(!result){
+    const task=pickByEnergy(avail,energy);
+    const invitation=smartInvitation(task,energy);
+    result={task,invitation,powered:isOnline?'smart':'offline'};
+  }
+
+  cur=result.task;
+  lr.style.display='none';
+  inv.textContent=result.invitation;
+  if(result.powered==='claude')mn.textContent='✦ powered by Claude';
+  else if(result.powered==='offline')mn.textContent='offline — smart suggestions';
+  else mn.textContent='smart suggestions — add API key in ⚙️ for Claude-powered';
+  sa.style.display='flex';
+}
+
+function yesTask(){if(!cur)return;document.getElementById('do-text').textContent=cur.text;show('doing')}
+function skipTask(){if(cur){skipIds.push(cur.id);cur=null}getSuggestion()}
+function notToday(){cur=null;skipIds=[];goGarden()}
+
+// ── TASK OPS ───────────────────────────────────────────────────────────
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function isRipe(t){return t.ripenDate&&new Date(t.ripenDate+'T00:00:00')<=new Date()}
+function fmtDate(d){if(!d)return'';return new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+
+async function completeTask(){
+  if(!cur)return;
+  const t=tasks.find(x=>x.id===cur.id);
+  if(t){t.status='bloomed';t.completedAt=Date.now();t.ripenDate=null}
+  const msg=MSGS[Math.floor(Math.random()*MSGS.length)];
+  cur=null;skipIds=[];save();goGarden();
+  const ma=document.getElementById('bloom-msg-area');
+  ma.innerHTML=`<p class="bloom-msg">${msg}</p>`;
+  setTimeout(()=>{ma.innerHTML=''},5000);
+}
+
+function toggleParkAdd(el){
+  isParking=el.checked;
+  document.getElementById('add-date-row').classList.toggle('show',isParking);
+}
+
+function pickCat(c,el){selCat=(selCat===c)?null:c;document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('on'));if(selCat)el.classList.add('on')}
+
+function plantSeed(){
+  const inp=document.getElementById('seed-inp');const txt=inp.value.trim();if(!txt)return;
+  const c=selCat||'default';const cols=COLORS[c]||COLORS.default;
+  const ripenDate=isParking?(document.getElementById('add-date').value||null):null;
+  tasks.unshift({id:'t'+Date.now(),text:txt,cat:c,urgent:false,status:isParking?'parked':'seed',color:cols[Math.floor(Math.random()*cols.length)],ftype:FTYPES[Math.floor(Math.random()*FTYPES.length)],planted:Date.now(),ripenDate});
+  save();inp.value='';selCat=null;isParking=false;
+  document.getElementById('park-chk').checked=false;document.getElementById('add-date-row').classList.remove('show');
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('on'));
+  toast('planted 🌱');goGarden();
+}
+
+function quickBloom(id,e){
+  e.stopPropagation();
+  const t=tasks.find(x=>x.id===id);
+  if(!t)return;
+  t.status='bloomed';t.completedAt=Date.now();t.ripenDate=null;
+  save();renderAll();
+  const msg=MSGS[Math.floor(Math.random()*MSGS.length)];
+  const ma=document.getElementById('bloom-msg-area');
+  ma.innerHTML=`<p class="bloom-msg">${msg}</p>`;
+  setTimeout(()=>{ma.innerHTML=''},5000);
+}
+function startPark(id,e){e.stopPropagation();parkingId=(parkingId===id)?null:id;renderSeedList()}
+function confirmPark(id,e){
+  e.stopPropagation();const dv=document.getElementById('pk-'+id);
+  const t=tasks.find(x=>x.id===id);if(t){t.status='parked';t.ripenDate=(dv&&dv.value)||null}
+  parkingId=null;save();renderAll();
+}
+function unparkSeed(id,e){e.stopPropagation();const t=tasks.find(x=>x.id===id);if(t){t.status='seed';t.ripenDate=null}save();renderAll()}
+function delTask(id,e){e.stopPropagation();tasks=tasks.filter(t=>t.id!==id);save();renderAll()}
+function checkIn(id){cur=tasks.find(x=>x.id===id);if(!cur)return;document.getElementById('do-text').textContent=cur.text;show('doing')}
+function pushWeek(id){const t=tasks.find(x=>x.id===id);if(!t)return;const b=t.ripenDate?new Date(t.ripenDate+'T00:00:00'):new Date();b.setDate(b.getDate()+7);t.ripenDate=b.toISOString().split('T')[0];save();renderRipe();renderParkedList()}
+function bloomDirect(id){const t=tasks.find(x=>x.id===id);if(t){t.status='bloomed';t.completedAt=Date.now();t.ripenDate=null}save();const msg=MSGS[Math.floor(Math.random()*MSGS.length)];goGarden();const ma=document.getElementById('bloom-msg-area');ma.innerHTML=`<p class="bloom-msg">${msg}</p>`;setTimeout(()=>{ma.innerHTML=''},5000)}
+
+// ── SETTINGS OPS ───────────────────────────────────────────────────────
+function toggleKeyVis(btn){const inp=document.getElementById('api-key-inp');inp.type=inp.type==='password'?'text':'password';btn.textContent=inp.type==='password'?'👁':'🙈'}
+function saveApiKey(){
+  const val=document.getElementById('api-key-inp').value.trim();
+  if(val&&val!=='••••••••••••'){setApiKey(val);toast('API key saved ✓')}
+  else toast('enter a key first');
+}
+function clearApiKey(){setApiKey('');document.getElementById('api-key-inp').value='';toast('key cleared')}
+function resetGarden(){
+  if(confirm('Reset your entire garden? All seeds, parked items, and bloomed flowers will be gone.')){
+    tasks=defaultTasks();save();goGarden();toast('garden reset 🌱');
+  }
+}
+
+// ── COPY ───────────────────────────────────────────────────────────────
+function doCopy(text,msg){
+  navigator.clipboard.writeText(text).then(()=>toast(msg)).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast(msg);
+  });
+}
+
+function copySeeds(){
+  const active=tasks.filter(t=>t.status==='seed'||t.status==='parked');
+  if(!active.length){toast('nothing to sync yet');return}
+  const lines=active.map(t=>{
+    let l=`- ${t.text}`;if(t.cat)l+=` (${t.cat})`;
+    if(t.status==='parked')l+=t.ripenDate?` [parked — check back ${fmtDate(t.ripenDate)}]`:' [parked — waiting on someone]';
+    return l;
+  }).join('\n');
+  doCopy(`Hi! I have new items to add to my garden:\n\n${lines}\n\nCan you add these to my task list?`,'Copied — paste into Claude 🌿');
+}
+
+function copyEOD(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const bloomed=tasks.filter(t=>t.status==='bloomed'&&t.completedAt&&new Date(t.completedAt)>=today);
+  const seeds=tasks.filter(t=>t.status==='seed');
+  const parked=tasks.filter(t=>t.status==='parked');
+  const bloomedLines=bloomed.length?bloomed.map(t=>`- ${t.text}`).join('\n'):'(nothing completed today yet)';
+  const seedLines=seeds.filter(t=>t.urgent).map(t=>`- ${t.text} [urgent]`).join('\n')||'(none urgent)';
+  const parkedLines=parked.map(t=>`- ${t.text}${t.ripenDate?' (checking '+fmtDate(t.ripenDate)+')':''}`).join('\n')||'(none)';
+  const msg=`End of day update 🌸\n\nCompleted today:\n${bloomedLines}\n\nStill urgent:\n${seedLines}\n\nOut of my hands:\n${parkedLines}\n\nCan you help me reflect on today and think through priorities for tomorrow?`;
+  doCopy(msg,'Copied — paste into Claude 🌸');
+}
+
+// ── RENDER ─────────────────────────────────────────────────────────────
+function renderAll(){renderGarden();updateStats();renderRipe();renderParkedList();renderSeedList();updateHeader()}
+
+function updateHeader(){
+  const s=tasks.filter(t=>t.status==='seed').length;
+  const b=tasks.filter(t=>t.status==='bloomed').length;
+  document.getElementById('hdr-sub').textContent=b>0?`${b} bloomed · ${s} seeds waiting`:`${s} seeds waiting`;
+}
+
+function renderGarden(){
+  const layer=document.getElementById('fl-layer'),eg=document.getElementById('empty-g');
+  const bloomed=tasks.filter(t=>t.status==='bloomed').sort((a,b)=>a.completedAt-b.completedAt);
+  const parked=tasks.filter(t=>t.status==='parked');
+  eg.style.display=(bloomed.length===0&&parked.length===0)?'block':'none';
+  layer.innerHTML='';
+  const W=460,sx=22,gy=158;
+  bloomed.forEach((t,i)=>{const pr=9,row=Math.floor(i/pr),col=i%pr;const x=sx+(col*(W/pr))+(row%2?26:0)+(Math.sin(i*1.9)*6);const y=gy-(row*28),sc=0.78+Math.sin(i*.8+1)*.12;const fresh=(Date.now()-(t.completedAt||0))<6000;layer.appendChild(makeFlower(x,y,t.color,t.ftype,sc,fresh))});
+  parked.forEach((t,i)=>{const x=38+(i*58)%(W+8)+(Math.cos(i*2.1)*10);layer.appendChild(makeSprout(x,gy,t.color,isRipe(t),0.7+Math.sin(i*1.3)*.1))});
+}
+
+function svgE(tag,attrs){const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const[k,v]of Object.entries(attrs))el.setAttribute(k,String(v));return el}
+
+function makeFlower(x,gy,color,type,sc,isNew){
+  const g=svgE('g',{transform:`translate(${x.toFixed(1)},${gy})`,'class':isNew?'fl-e':'fl-s'});
+  const sh=32*sc;
+  g.appendChild(svgE('line',{x1:0,y1:0,x2:0,y2:-sh,stroke:'#3d7024','stroke-width':1.8*sc,'stroke-linecap':'round'}));
+  const lx=6*sc,ly=-sh*.55;g.appendChild(svgE('ellipse',{cx:lx,cy:ly,rx:7*sc,ry:3*sc,fill:'#52892a',transform:`rotate(38,${lx},${ly})`}));
+  const head=svgE('g',{transform:`translate(0,${-sh})`});
+  const st=n=>isNew?`animation:petalFade .3s ${(n*.07).toFixed(2)}s ease both;opacity:0`:'';
+  if(type==='round'){for(let i=0;i<6;i++){const p=svgE('ellipse',{cx:0,cy:(-9*sc).toFixed(1),rx:(4.5*sc).toFixed(1),ry:(8*sc).toFixed(1),fill:color,opacity:.9,transform:`rotate(${i*60})`});if(isNew)p.setAttribute('style',st(i));head.appendChild(p)}}
+  else if(type==='daisy'){for(let i=0;i<10;i++){const p=svgE('ellipse',{cx:0,cy:(-10*sc).toFixed(1),rx:(2.5*sc).toFixed(1),ry:(8.5*sc).toFixed(1),fill:color,opacity:.85,transform:`rotate(${i*36})`});if(isNew)p.setAttribute('style',st(i));head.appendChild(p)}}
+  else if(type==='tulip'){for(let i=0;i<4;i++){const p=svgE('ellipse',{cx:0,cy:(-10*sc).toFixed(1),rx:(6*sc).toFixed(1),ry:(11*sc).toFixed(1),fill:color,opacity:.85,transform:`rotate(${i*90})`});if(isNew)p.setAttribute('style',st(i));head.appendChild(p)}}
+  else{for(let i=0;i<8;i++){const p=svgE('ellipse',{cx:0,cy:(-7.5*sc).toFixed(1),rx:(2.2*sc).toFixed(1),ry:(7*sc).toFixed(1),fill:color,opacity:.9,transform:`rotate(${i*45})`});if(isNew)p.setAttribute('style',st(i));head.appendChild(p)}}
+  head.appendChild(svgE('circle',{cx:0,cy:0,r:(5.5*sc).toFixed(1),fill:'#ffd040'}));
+  head.appendChild(svgE('circle',{cx:0,cy:0,r:(2.8*sc).toFixed(1),fill:'#c07810'}));
+  g.appendChild(head);return g;
+}
+
+function makeSprout(x,gy,color,ripe,sc){
+  const g=svgE('g',{transform:`translate(${x.toFixed(1)},${gy})`});const sh=20*sc;
+  g.appendChild(svgE('line',{x1:0,y1:0,x2:0,y2:-sh,stroke:'#4a7c2f','stroke-width':1.4*sc,'stroke-linecap':'round'}));
+  const lx=4.5*sc,ly=-sh*.6;g.appendChild(svgE('ellipse',{cx:lx,cy:ly,rx:4.5*sc,ry:2.2*sc,fill:'#5a9c30',opacity:.65,transform:`rotate(40,${lx},${ly})`}));
+  g.appendChild(svgE('ellipse',{cx:0,cy:-sh,rx:3*sc,ry:5.5*sc,fill:color,opacity:.5}));
+  g.appendChild(svgE('ellipse',{cx:0,cy:(-sh-2.2*sc).toFixed(1),rx:1.8*sc,ry:2.5*sc,fill:color,opacity:.6}));
+  if(ripe)g.appendChild(svgE('circle',{cx:(4*sc).toFixed(1),cy:(-sh-5*sc).toFixed(1),r:(2.5*sc).toFixed(1),fill:'#ffd040',opacity:.95}));
+  return g;
+}
+
+function updateStats(){
+  const s=tasks.filter(t=>t.status==='seed').length,p=tasks.filter(t=>t.status==='parked').length,b=tasks.filter(t=>t.status==='bloomed').length;
+  document.getElementById('s-seeds').textContent=`🌱 ${s} seed${s!==1?'s':''}`;
+  document.getElementById('s-parked').textContent=`🌿 ${p} parked`;
+  document.getElementById('s-bloomed').textContent=`🌸 ${b} bloomed`;
+}
+
+function renderRipe(){
+  const area=document.getElementById('ripe-area');
+  const ripe=tasks.filter(t=>isRipe(t)&&(t.status==='parked'||t.status==='seed'));
+  if(!ripe.length){area.style.display='none';area.innerHTML='';return}
+  area.style.display='block';
+  area.innerHTML=`<div class="ripe-wrap"><p class="ripe-title">a few things might be ready to check on 🌿</p>${ripe.map(t=>`<div class="ripe-row"><span class="ripe-text">${esc(t.text.length>40?t.text.slice(0,40)+'…':t.text)}</span><button class="btn-sm" onclick="checkIn('${t.id}')">check in ↗</button><button class="btn-sm btn-ghost" onclick="pushWeek('${t.id}')">push a week</button><button class="btn-sm btn-ghost" onclick="bloomDirect('${t.id}')">done 🌸</button></div>`).join('')}</div>`;
+}
+
+function renderParkedList(){
+  const wrap=document.getElementById('parked-list-area');
+  const parked=tasks.filter(t=>t.status==='parked');
+  if(!parked.length){wrap.innerHTML='';return}
+  wrap.innerHTML=`<div class="pill-section"><div class="sec-lbl">out of your hands (${parked.length})</div><div class="pills-wrap">${parked.map(t=>{
+    const ripe=isRipe(t);const dtag=t.ripenDate?` <span style="font-size:10px;color:${ripe?'#5a9930':'#bbb'}">${ripe?'ready ✦':'→ '+fmtDate(t.ripenDate)}</span>`:'';
+    return`<div class="pill parked"><span class="pill-t" title="${esc(t.text)}">${esc(t.text.length>28?t.text.slice(0,28)+'…':t.text)}</span>${dtag}<button class="pi" onclick="unparkSeed('${t.id}',event)" title="take back">↩</button><button class="pi" onclick="delTask('${t.id}',event)" title="remove">✕</button></div>`;
+  }).join('')}</div></div>`;
+}
+
+function renderSeedList(){
+  const wrap=document.getElementById('seed-list-area');
+  const seeds=tasks.filter(t=>t.status==='seed');
+  if(!seeds.length){wrap.innerHTML='';return}
+  const sorted=[...seeds].sort((a,b)=>{if(a.urgent&&!b.urgent)return -1;if(!a.urgent&&b.urgent)return 1;return 0});
+  wrap.innerHTML=`<div class="pill-section"><div class="sec-lbl">seeds planted (${seeds.length})</div><div class="pills-wrap">${sorted.map(t=>{
+    const inPark=parkingId===t.id;
+    const cls=t.urgent?' urgent':'';
+    const dot=t.urgent?'🔴 ':'';
+    return`<div style="display:flex;flex-direction:column;gap:3px"><div class="pill${cls}"><span class="pill-t" title="${esc(t.text)}">${dot}${esc(t.text.length>26?t.text.slice(0,26)+'…':t.text)}</span><button class="pi pi-done" onclick="quickBloom('${t.id}',event)" title="mark done 🌸" style="color:#5a9930;font-size:13px">✓</button><button class="pi" onclick="startPark('${t.id}',event)" title="park — waiting on someone">🌿</button><button class="pi" onclick="delTask('${t.id}',event)" title="remove">✕</button></div>${inPark?`<div class="park-inline"><label>check back:</label><input type="date" id="pk-${t.id}"/><button onclick="confirmPark('${t.id}',event)" style="padding:3px 9px;font-size:11px" class="btn-green">park 🌿</button><button onclick="startPark('${t.id}',event)" style="padding:3px 5px;font-size:11px;border:none;background:none;color:#bbb;cursor:pointer">×</button></div>`:''}</div>`;
+  }).join('')}</div></div>`;
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────
+let tt=null;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');if(tt)clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2400)}
+
+// ── SERVICE WORKER ─────────────────────────────────────────────────────
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+// ── INIT ───────────────────────────────────────────────────────────────
+loadTasks();
+renderAll();
+updateOnline();
+initSpeech();
+</script>
+</body>
+</html>
